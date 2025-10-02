@@ -186,18 +186,16 @@ async def main(isStarted = False):
         return
 
 async def scheduler():
-    # Run main() once at startup
     await main(isStarted=True)
     alert.send_country_message()
     while True:
         # Get Brazilia time (UTC-3)
         now = datetime.now(timezone(timedelta(hours=-3)))
         if now.hour == 19 and now.minute == 1:  # Brazil time 7:00 PM
-            await main(isStarted=True)
-            # Sleep for 60 seconds to avoid running multiple times within the same minute
+            await main()
             await asyncio.sleep(60)
         if now.minute == 00:
-            await facebook.fb_optimize()
+            await facebook.fb_ads_data_fetch_and_save()
             alert.send_country_message()
             await asyncio.sleep(60)
         else:

@@ -159,7 +159,6 @@ def check_campaign_status(account_id=None, campaign_name_filter=None):
 
 async def get_facebook_ads_direct_windsor() -> list:
     global is_first_call
-    current_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     url = "https://connectors.windsor.ai/all"
     
     # For first call, use date_from/date_to; for subsequent calls, use date_preset
@@ -167,7 +166,7 @@ async def get_facebook_ads_direct_windsor() -> list:
         params = {
             'api_key': core.fb_api_key,
             'date_from': '2025-06-24',
-            'date_to': current_date,
+            'date_to': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
             # 'date_preset': 'last_3d',
             'fields': 'account_id,account_name,campaign,campaign_id,country,date,spend',
         }
@@ -318,11 +317,6 @@ async def load_data_from_db() -> list:
 
     result = []
     for row in sum_spend_per_country:
-        # country = row[0]
-        # spend = row[1]
-        # country_code = country_name_to_code(country)
-        # result.append({'country': country, 'spend': spend, 'country_code': country_code})
-        
         country_code = row[0]
         spend = row[1]
         country = pycountry.countries.get(alpha_2=country_code)
@@ -338,11 +332,14 @@ async def load_data_from_db() -> list:
 
         result.append({'country': country_name, 'spend': spend, 'country_code': country_code})
     return result
-  
-async def fb_optimize() -> list:
+
+async def fb_ads_data_fetch_and_save():
     # fb_data = await get_facebook_ads_direct_windsor()
     fb_data = await get_facebook_ads_data_from_graph_api()
     await save_data_to_sqlite(fb_data)
+
+async def fb_optimize() -> list:
+    await fb_ads_data_fetch_and_save()    
     fb_data_optimize = await load_data_from_db()
     
     # # Add fb_base_ads_br values to the spend based on country_code
@@ -371,9 +368,9 @@ async def remove_country_from_account_id(countries_info: list)-> None:
         print('===============account_id================')
         print(account_id, account_name)
 
-        if account_id == "1099441028945876": # BLACK STAR [ACC 34] [T.D]
-            print(f"⛔ Skipping account_id {account_id} as per exclusion rule.")
-            continue
+        # if account_id == "1099441028945876": # BLACK STAR [ACC 34] [T.D]
+        #     print(f"⛔ Skipping account_id {account_id} as per exclusion rule.")
+        #     continue
         
         try:
             act_account_id = f"act_{account_id}"
