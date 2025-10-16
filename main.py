@@ -18,7 +18,9 @@ import facebook
 
 from googlesheet import update_google_sheet
 
-os.system("FBPO_listener")
+
+__appname__ = "FBPO Listener"
+os.system("title [%s]" % __appname__)
 
 core.chat_ids = core.load_chatids()
 
