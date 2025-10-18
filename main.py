@@ -74,7 +74,7 @@ def combine_spend_commission(po_commission: list, fb_spend: list) -> list:
     return combined
 
 
-def get_added_removed_countries(remove_country: dict):
+def create_telegram_message(remove_country: dict):
     file_path = 'remove_country.txt'
     message_file = 'remove_country_message.txt'
     # If file does not exist, save current remove_country and return
@@ -179,13 +179,15 @@ async def main(isStarted = False):
             print("Combine data is failed")
             return
         # remove_country = update_google_sheet(combine_data)
-        remove_country, add_country = update_google_sheet(combine_data)
+        countires_info = update_google_sheet(combine_data)
+        included_countries = countires_info['ADD']
+        excluded_countries = countires_info['REMOVE']
 
-        get_added_removed_countries(remove_country)
+        create_telegram_message(excluded_countries)
         
         if isStarted == False:
-            # await facebook.remove_country_from_account_id(remove_country)
-            await facebook.update_account_targeting_with_included_countries(add_country)
+            # await facebook.remove_country_from_account_id(excluded_countries)
+            await facebook.update_account_targeting_with_included_countries(included_countries)
     except Exception as e:
         logger.exception(f"Error in main function: {e}")
         return

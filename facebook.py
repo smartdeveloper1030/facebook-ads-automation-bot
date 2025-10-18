@@ -466,23 +466,17 @@ async def remove_country_from_account_id(countries_info: list)-> None:
                 break
     return
 
-async def update_account_targeting_with_included_countries(countries_info: list) -> None:
-    """
-    Updates Facebook ad account targeting to include ONLY specified countries.
-    Uses inclusion strategy instead of exclusion (worldwide - excluded).
-    
-    Args:
-        countries_info: List of country dictionaries with 'COUNTRY' key
-    """
+async def update_account_targeting_with_included_countries(included_counties: list) -> None:
     # Get list of countries we WANT to target
-    included_countries = [country_name_to_code(country.get('COUNTRY')) for country in countries_info]
+    included_countries = [country_name_to_code(country.get('COUNTRY')) for country in included_counties]
     
     # Remove default countries (SG, TW, GB) from the list
     excluded_defaults = ["SG", "TW", "GB"]
-    included_countries = [country for country in included_countries if country not in excluded_defaults]
-    
+    included_countries = [country for country in included_countries 
+                      if country not in excluded_defaults and len(country) <= 2]
+
     print(f"🎯 Targeting these countries: {', '.join(included_countries)}")
-    
+
     account_info = get_active_ad_accounts()
 
     for account in account_info:

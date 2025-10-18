@@ -235,7 +235,7 @@ def update_google_sheet(data: list) -> dict:
         print(f"Debug - RANGE_NAME: {sheet_name}")
         service = get_service()
         if not service:
-            return
+            return {"REMOVE": [], "ADD": []}
         b1_float = get_b1_value(service, spreadsheet_id, sheet_name)
         clear_sheet(service, spreadsheet_id, sheet_name)
         update_values(service, spreadsheet_id, sheet_name, data, b1_float)
