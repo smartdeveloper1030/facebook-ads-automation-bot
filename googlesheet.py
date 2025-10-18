@@ -171,6 +171,43 @@ def get_remove_rows(data, b1_float) -> list:
     print('---remove_rows-------')
     return remove_rows
 
+def get_remove_added_rows(data, b1_float) -> dict:
+    """
+    Returns a list of dicts from data where the calculated status is 'REMOVE'.
+    """
+    if not data:
+        return {"REMOVE": [], "ADD": []}
+    
+    remove_rows = []
+    added_rows = []
+
+    for row in data:
+        roi = row['COMMISSION'] / row['SPEND BRL'] * b1_float * 100
+        if row['SPEND BRL'] / b1_float < 100:
+            status = 'ADD'
+        else:
+            status = 'ADD' if roi > 150 else 'REMOVE'
+        # Optionally, add the status to the row for clarity
+        row_copy = row.copy()
+        row_copy['ADD/REMOVE'] = status
+        SPEND_BRL = float(row_copy['SPEND BRL'])
+        SPEND_USD = SPEND_BRL / b1_float
+        COMMISSION = row_copy['COMMISSION']
+        row_copy['SPEND BRL'] = format_currency_brl(SPEND_BRL)
+        row_copy['SPEND USD'] = format_currency_usd(SPEND_USD)
+        row_copy['COMMISSION'] = format_currency_usd(COMMISSION)
+        row_copy['ROI$'] = format_currency_usd(COMMISSION - SPEND_USD)
+        row_copy['ROI%'] = format_currency_percent(COMMISSION / SPEND_USD * 100)
+        row_copy['ROIX'] = f"{COMMISSION / SPEND_USD:,.2f}"
+    
+        if status == 'REMOVE':
+            remove_rows.append(row_copy)
+        else:
+            added_rows.append(row_copy)
+    
+    print('---remove_rows, added_rows-------')
+    return {"REMOVE": remove_rows, "ADD": added_rows}
+
 def update_google_sheet(data: list):
     try:
         spreadsheet_id = core.sheet_id
