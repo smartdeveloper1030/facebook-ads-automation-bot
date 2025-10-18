@@ -208,7 +208,26 @@ def get_remove_added_rows(data, b1_float) -> dict:
     print('---remove_rows, added_rows-------')
     return {"REMOVE": remove_rows, "ADD": added_rows}
 
-def update_google_sheet(data: list):
+# def update_google_sheet(data: list):
+#     try:
+#         spreadsheet_id = core.sheet_id
+#         sheet_name = get_sheet_name()
+#         print(f"Debug - SPREADSHEET_ID: {spreadsheet_id}")
+#         print(f"Debug - RANGE_NAME: {sheet_name}")
+#         service = get_service()
+#         if not service:
+#             return
+#         b1_float = get_b1_value(service, spreadsheet_id, sheet_name)
+#         clear_sheet(service, spreadsheet_id, sheet_name)
+#         update_values(service, spreadsheet_id, sheet_name, data, b1_float)
+#         return get_remove_rows(data, b1_float)
+#     except Exception as e:
+#         print(f"Unexpected error in update_google_sheet: {e}")
+#         import traceback
+#         traceback.print_exc()
+#         return []
+
+def update_google_sheet(data: list) -> dict:
     try:
         spreadsheet_id = core.sheet_id
         sheet_name = get_sheet_name()
@@ -220,12 +239,12 @@ def update_google_sheet(data: list):
         b1_float = get_b1_value(service, spreadsheet_id, sheet_name)
         clear_sheet(service, spreadsheet_id, sheet_name)
         update_values(service, spreadsheet_id, sheet_name, data, b1_float)
-        return get_remove_rows(data, b1_float)
+        return get_remove_added_rows(data, b1_float)
     except Exception as e:
         print(f"Unexpected error in update_google_sheet: {e}")
         import traceback
         traceback.print_exc()
-        return []
+        return {"REMOVE": [], "ADD": []}
 
 def update_google_sheet3(account_name: str, campaign_name: str, excluded_country: list):
     try:

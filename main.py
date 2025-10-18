@@ -178,11 +178,14 @@ async def main(isStarted = False):
         if combine_data is None:
             print("Combine data is failed")
             return
-        remove_country = update_google_sheet(combine_data)
+        # remove_country = update_google_sheet(combine_data)
+        remove_country, add_country = update_google_sheet(combine_data)
+
         get_added_removed_countries(remove_country)
         
         if isStarted == False:
-            await facebook.remove_country_from_account_id(remove_country)
+            # await facebook.remove_country_from_account_id(remove_country)
+            await facebook.update_account_targeting_with_included_countries(add_country)
     except Exception as e:
         logger.exception(f"Error in main function: {e}")
         return

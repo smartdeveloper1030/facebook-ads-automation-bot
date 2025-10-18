@@ -465,3 +465,128 @@ async def remove_country_from_account_id(countries_info: list)-> None:
             if error_occurred:
                 break
     return
+
+async def update_account_targeting_with_included_countries(countries_info: list) -> None:
+    """
+    Updates Facebook ad account targeting to include ONLY specified countries.
+    Uses inclusion strategy instead of exclusion (worldwide - excluded).
+    
+    Args:
+        countries_info: List of country dictionaries with 'COUNTRY' key
+    """
+    # Get list of countries we WANT to target
+    included_countries = [country_name_to_code(country.get('COUNTRY')) for country in countries_info]
+    
+    # Remove default countries (SG, TW, GB) from the list
+    excluded_defaults = ["SG", "TW", "GB"]
+    included_countries = [country for country in included_countries if country not in excluded_defaults]
+    
+    print(f"🎯 Targeting these countries: {', '.join(included_countries)}")
+    
+    account_info = get_active_ad_accounts()
+
+    for account in account_info:
+        account_id = account['account_id']
+        account_name = account['account_name']
+
+        print('===============account_id================')
+        print(account_id, account_name)
+        
+        try:
+            act_account_id = f"act_{account_id}"
+            ad_account = AdAccount(act_account_id)
+            campaigns = ad_account.get_campaigns(fields=[
+                Campaign.Field.name,
+                Campaign.Field.status,
+                Campaign.Field.effective_status
+            ])
+        except Exception as e:
+            print(f"❌ Error Account_id {act_account_id}")
+            continue
+
+        target_campaigns = [
+            {
+                'id': campaign[Campaign.Field.id],
+                'name': campaign[Campaign.Field.name],
+                'status': campaign[Campaign.Field.status],
+                'effective_status': campaign[Campaign.Field.effective_status]
+            }
+            for campaign in campaigns
+            if keyword1 in campaign[Campaign.Field.name] or keyword2 in campaign[Campaign.Field.name]
+        ]
+        
+        # Display campaign status information
+        print(f"📊 Found {len(target_campaigns)} campaigns with DEYOO/MAGDY keywords:")
+        for campaign in target_campaigns:
+            status_icon = "🟢" if campaign['status'] == "ACTIVE" else "🔴" if campaign['status'] == "PAUSED" else "🟡"
+            print(f"  {status_icon} {campaign['name']}")
+            print(f"     Status: {campaign['status']} | Effective Status: {campaign['effective_status']}")
+        
+        # Process each campaign
+        for campaign in target_campaigns:
+            campaign_id = campaign['id']
+            campaign_name = campaign['name']
+            campaign_status = campaign['status']
+            campaign_effective_status = campaign['effective_status']
+            
+            if campaign_status != "ACTIVE":
+                print(f"⏸️  Skipping {campaign_name} - Status: {campaign_status}")
+                continue
+                
+            print(f"▶️  Processing active campaign: {campaign_name}")
+            time.sleep(3)
+            
+            adsets = Campaign(campaign_id).get_ad_sets(fields=[
+                AdSet.Field.id, 
+                AdSet.Field.name, 
+                AdSet.Field.targeting
+            ])
+            print('===========adsets==========')
+            error_occurred = False
+
+            first = True
+            for adset in adsets:
+                adset_id = adset[AdSet.Field.id]
+                adset_name = adset[AdSet.Field.name]
+                
+                current_targeting = adset[AdSet.Field.targeting]
+                new_targeting = dict(current_targeting) if current_targeting else {}
+                
+                # NEW STRATEGY: Include only specific countries
+                new_targeting["geo_locations"] = {
+                    "countries": included_countries
+                }
+                
+                # Remove excluded_geo_locations if it exists (not needed with inclusion strategy)
+                if "excluded_geo_locations" in new_targeting:
+                    del new_targeting["excluded_geo_locations"]
+                
+                # Ensure language settings are preserved
+                if "locales" not in new_targeting:
+                    # If no language targeting exists, set to "All languages" explicitly
+                    new_targeting["locales"] = []
+                    
+                try:
+                    time.sleep(15)
+                    print(f"😊 updating {adset_name}")
+                    adset.api_update(params={
+                        AdSet.Field.targeting: new_targeting
+                    })
+                    
+                    if first:
+                        print(f"✅ Updated: account_name={account_name}")
+                        print(f"campaign_name={campaign_name} adset_name={adset_name}")
+                        print(f"included_countries={included_countries}")
+                        update_google_sheet3(account_name, campaign_name, included_countries)
+                    else:
+                        print(f"✅ Updated: adset_name={adset_name}")
+                    first = False
+                except Exception as e:
+                    print(f"❌ Error updating {adset_name}")
+                    error_occurred = True
+                    break
+                    
+            if error_occurred:
+                break
+                
+    return
