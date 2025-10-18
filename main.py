@@ -193,7 +193,7 @@ async def scheduler():
     while True:
         # Get Brazilia time (UTC-3)
         now = datetime.now(timezone(timedelta(hours=-3)))
-        if now.hour == 19 and now.minute == 1:  # Brazil time 7:00 PM
+        if  now.weekday() == 2 and now.hour == 19 and now.minute == 1:  # Brazil time 7:00 PM and wednesday
             await main()
             await asyncio.sleep(60)
         if now.minute == 00:
